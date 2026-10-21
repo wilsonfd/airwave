@@ -43,6 +43,11 @@ struct ContentView: View {
         }
         .onAppear {
             manager.autoReconnect = autoReconnect
+            if ProcessInfo.processInfo.arguments.contains("-ShowSettings") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    showSettings = true
+                }
+            }
         }
         .onChange(of: autoReconnect) { value in
             manager.autoReconnect = value
