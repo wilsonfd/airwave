@@ -55,7 +55,7 @@ AirWave/
 
 ### 1. Windows
 
-1. 运行 `dist/AirWaveSetup-2.0.0.exe`。
+1. 运行 `dist/AirWaveSetup-2.0.0.exe`。安装包未做代码签名，若 SmartScreen 提示，点“更多信息 → 仍要运行”。
 2. 安装时保持勾选“添加 Windows 防火墙规则”。
 3. 打开 AirWave，音频来源选 **系统声音**（默认就是当前扬声器回环）。
 4. 点中间的大圆按钮“开始推流”，记下右上角显示的 IP。
