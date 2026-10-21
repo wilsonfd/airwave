@@ -14,7 +14,7 @@ struct ContentView: View {
         GeometryReader { geo in
             let orbSize = min(min(max(190, geo.size.width * 0.78), geo.size.height * 0.34), 320)
 
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 AuroraBackground(phase: manager.phase)
 
                 VStack(spacing: 0) {
@@ -30,15 +30,9 @@ struct ContentView: View {
                     bottomPanel
                 }
                 .frame(width: max(0, geo.size.width - 40))
-                .frame(maxWidth: .infinity)
                 .padding(.top, 4)
                 .padding(.bottom, 10)
-                .border(Color.red, width: 1)
-                .overlay(alignment: .topLeading) {
-                    Text("geo \(Int(geo.size.width))x\(Int(geo.size.height)) safe \(Int(geo.safeAreaInsets.leading)),\(Int(geo.safeAreaInsets.trailing))")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.red)
-                }
+                .offset(x: 20)
             }
         }
         .sheet(isPresented: $showSettings) {
