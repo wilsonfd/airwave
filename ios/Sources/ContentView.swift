@@ -12,7 +12,7 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let orbSize = min(min(max(200, geo.size.width * 0.80), geo.size.height * 0.38), 326)
+            let orbSize = min(min(max(190, geo.size.width * 0.78), geo.size.height * 0.34), 320)
 
             ZStack {
                 AuroraBackground(phase: manager.phase)
@@ -32,6 +32,7 @@ struct ContentView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
                 .padding(.bottom, 10)
+                .frame(maxWidth: .infinity)
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -133,7 +134,9 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 4)
                 }
+                .frame(maxWidth: .infinity)
                 .frame(height: 30)
+                .clipped()
                 .padding(.top, 2)
             } else if !ip.isEmpty {
                 Text("\(ip) : \(port)")
@@ -168,7 +171,14 @@ struct ContentView: View {
                     .fill(Color.white.opacity(0.07))
                     .frame(height: 1)
 
-                HStack(spacing: 12) {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12),
+                    ],
+                    alignment: .leading,
+                    spacing: 10
+                ) {
                     TinyMetric(title: "缓冲", value: String(format: "%.0f ms", manager.bufferMs),
                                tint: manager.bufferMs > 200 ? .awAmber : .awText)
                     TinyMetric(title: "丢包", value: String(format: "%.1f%%", manager.lossPercent),
