@@ -70,6 +70,8 @@ final class AudioPipeline {
     private var needsFadeIn = false
     private var didStart = false
     private var scheduled = 0
+    private var recovering = false
+    private var lastTrimAt = Date.distantPast
 
     private var pumpTimer: DispatchSourceTimer?
     private var statsTimer: DispatchSourceTimer?
@@ -98,7 +100,7 @@ final class AudioPipeline {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(engineConfigurationChanged),
-            name: NSNotification.Name.AVAudioEngineConfigurationChange,
+            name: .AVAudioEngineConfigurationChange,
             object: nil
         )
     }
@@ -209,7 +211,13 @@ final class AudioPipeline {
             }
             self.lastSeq = seq
             self.jitter.insert(seq: seq, pcm: pcm)
-            self.jitter.primeIfReady(self.prebufferPackets)
+            let primeTarget = self.recovering
+                ? min(4, self.prebufferPackets)
+                : self.prebufferPackets
+            self.jitter.primeIfReady(primeTarget)
+            if self.jitter.primed {
+                self.recovering = false
+            }
             self.pumpLocked()
         }
     }
@@ -299,6 +307,8 @@ final class AudioPipeline {
         arrivalJitterMs = 0
         lastArrival = nil
         lastSeq = nil
+        recovering = false
+        lastTrimAt = Date.distantPast
         adaptiveMs = mode == .auto ? 80 : mode.prebufferMs
         lastAdaptAt = Date()
     }
@@ -364,6 +374,15 @@ final class AudioPipeline {
             player.play()
         }
 
+        // Bound latency drift (the PC and iPhone crystals are not identical).
+        let maxJitter = prebufferPackets + leadBuffers + 12
+        if jitter.count > maxJitter, Date().timeIntervalSince(lastTrimAt) > 2.0 {
+            jitter.skipExpected()
+            packetsLost += 1
+            needsFadeIn = true
+            lastTrimAt = Date()
+        }
+
         var guardCount = 0
         while scheduled < leadBuffers {
             guardCount += 1
@@ -388,9 +407,11 @@ final class AudioPipeline {
                 underruns += 1
                 lastUnderrunAt = Date()
                 if jitter.count == 0 {
-                    // The network is quiet; wait for a fresh pre-buffer rather
-                    // than filling the queue with concealment.
+                    // The network is quiet; wait for a short recovery
+                    // pre-buffer rather than filling the queue with
+                    // concealment.
                     jitter.unprime()
+                    recovering = true
                     return
                 }
                 // Future packets are already waiting, so the expected one is

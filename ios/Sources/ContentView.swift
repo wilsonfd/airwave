@@ -12,7 +12,7 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let orbSize = min(max(200, geo.size.width * 0.80), geo.size.height * 0.38, 326)
+            let orbSize = min(min(max(200, geo.size.width * 0.80), geo.size.height * 0.38), 326)
 
             ZStack {
                 AuroraBackground(phase: manager.phase)

@@ -18,7 +18,6 @@ SetupIconFile=assets\app.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-WizardResizable=no
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -44,11 +43,11 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "netsh.exe"; Parameters: "advfirewall firewall add rule name=""AirWave UDP {#MyPort}"" dir=in action=allow protocol=UDP localport={#MyPort} profile=private,domain"; Flags: runhidden; Tasks: firewall
+Filename: "netsh.exe"; Parameters: "advfirewall firewall add rule name=AirWave_UDP_{#MyPort} dir=in action=allow protocol=UDP localport={#MyPort} profile=private,domain"; Flags: runhidden; Tasks: firewall
 Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallRun]
-Filename: "netsh.exe"; Parameters: "advfirewall firewall delete rule name=""AirWave UDP {#MyPort}""; Flags: runhidden
+Filename: "netsh.exe"; Parameters: "advfirewall firewall delete rule name=AirWave_UDP_{#MyPort}"; Flags: runhidden; RunOnceId: "RemoveAirWaveFirewallRule"
 
 [Code]
 function InitializeSetup(): Boolean;

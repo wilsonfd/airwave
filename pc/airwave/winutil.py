@@ -48,8 +48,8 @@ def add_firewall_rule(port: int) -> bool:
     """Ask for UAC once and create an inbound UDP allow rule."""
     if sys.platform != "win32":
         return False
-    rule = f"AirWave UDP {port}"
-    params = (f'advfirewall firewall add rule name="{rule}" dir=in '
+    rule = f"AirWave_UDP_{port}"
+    params = (f'advfirewall firewall add rule name={rule} dir=in '
               f'action=allow protocol=UDP localport={port} profile=private,domain')
     try:
         rc = ctypes.windll.shell32.ShellExecuteW(
@@ -62,7 +62,7 @@ def add_firewall_rule(port: int) -> bool:
 def firewall_rule_exists(port: int) -> bool:
     if sys.platform != "win32":
         return False
-    rule = f"AirWave UDP {port}"
+    rule = f"AirWave_UDP_{port}"
     try:
         proc = subprocess.run(
             ["netsh", "advfirewall", "firewall", "show", "rule", f"name={rule}"],
