@@ -269,7 +269,6 @@ final class AudioPipeline {
         engine.prepare()
         do {
             try engine.start()
-            player.play()
         } catch {
             self.running = false
             DispatchQueue.main.async { self.onError?("音频引擎启动失败：\(error.localizedDescription)") }
@@ -382,9 +381,6 @@ final class AudioPipeline {
 
     private func pumpLocked() {
         guard running, !paused, let player = player, let fmt = format, jitter.primed else { return }
-        if !player.isPlaying {
-            player.play()
-        }
 
         // Bound latency drift (the PC and iPhone crystals are not identical).
         let maxJitter = prebufferPackets + leadBuffers + 16
@@ -445,6 +441,13 @@ final class AudioPipeline {
             concealRun += 1
             needsFadeIn = true
             lastLossAt = Date()
+        }
+
+        // Match the known-good Doubao flow: queue a burst first, then start the
+        // player.  Playing an empty node and scheduling into it is allowed, but
+        // this ordering has fewer edge cases on older iOS versions.
+        if !player.isPlaying, scheduled > 0 {
+            player.play()
         }
     }
 
