@@ -23,18 +23,18 @@ enum LatencyMode: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .auto: return "自动调节"
-        case .low: return "约 90 ms"
-        case .balanced: return "约 140 ms"
-        case .stable: return "约 300 ms"
+        case .low: return "约 100 ms"
+        case .balanced: return "约 190 ms"
+        case .stable: return "约 320 ms"
         }
     }
 
     var detail: String {
         switch self {
         case .auto: return "按网络抖动自动调整，推荐"
-        case .low: return "约 80–110 ms，适合同一房间"
-        case .balanced: return "约 120–170 ms，日常使用"
-        case .stable: return "约 280–340 ms，隔墙/弱网更稳"
+        case .low: return "约 90–120 ms，适合同一房间"
+        case .balanced: return "约 170–210 ms，日常使用"
+        case .stable: return "约 300–350 ms，隔墙/弱网更稳"
         }
     }
 
