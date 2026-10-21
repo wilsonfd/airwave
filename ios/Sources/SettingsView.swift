@@ -39,6 +39,7 @@ struct SettingsView: View {
                             applyButton
                         }
                         .frame(width: max(0, geo.size.width - 36))
+                        .padding(.horizontal, 18)
                         .padding(.top, 12)
                         .padding(.bottom, 28)
                         .frame(maxWidth: .infinity)
@@ -65,7 +66,8 @@ struct SettingsView: View {
             draftIP = ip
             draftPort = port
             saved = SavedEndpointsStore.load()
-            if saved.isEmpty, ProcessInfo.processInfo.arguments.contains("-DemoSavedIPs") {
+            if saved.isEmpty,
+               ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
                 saved = [
                     SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
                     SavedEndpoint(host: "192.168.1.88", port: 13666,
@@ -129,7 +131,7 @@ struct SettingsView: View {
 
                     Spacer()
 
-                    Text(saved.isEmpty ? "还没有保存的地址" : "已保存 \(saved.count) 个地址")
+                    Text(saved.isEmpty ? "未保存" : "已保存 \(saved.count) 个")
                         .font(AWFont.rounded(9.5, .regular))
                         .foregroundColor(.awDim)
                 }
