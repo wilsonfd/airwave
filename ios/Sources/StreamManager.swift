@@ -76,7 +76,7 @@ final class StreamManager: ObservableObject {
     }
 
     @Published private(set) var phase: Phase = .idle
-    @Published private(set) var statusText = "未连接"
+    @Published private(set) var statusText = "点上方圆钮开始连接"
     @Published private(set) var serverName = ""
     @Published private(set) var formatText = ""
     @Published private(set) var isConnected = false
@@ -217,7 +217,7 @@ final class StreamManager: ObservableObject {
         deactivateAudioSession()
         DispatchQueue.main.async {
             self.phase = .idle
-            self.statusText = "未连接"
+            self.statusText = "点上方圆钮重新连接"
             self.isConnected = false
             self.level = 0
             self.bufferMs = 0
