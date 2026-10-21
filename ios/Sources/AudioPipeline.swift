@@ -28,19 +28,19 @@ final class AudioPipeline {
 
         var prebufferMs: Double {
             switch self {
-            case .auto: return 100
+            case .auto: return 120
             case .low: return 60
-            case .balanced: return 100
+            case .balanced: return 120
             case .stable: return 240
             }
         }
 
         var leadBuffers: Int {
             switch self {
-            case .auto: return 5
-            case .low: return 3
-            case .balanced: return 5
-            case .stable: return 8
+            case .auto: return 8
+            case .low: return 4
+            case .balanced: return 8
+            case .stable: return 10
             }
         }
     }
@@ -79,7 +79,7 @@ final class AudioPipeline {
     private var packetsReceived = 0
     private var packetsLost = 0
     private var underruns = 0
-    private var adaptiveMs: Double = 100
+    private var adaptiveMs: Double = 120
     private var lastLossAt = Date.distantPast
     private var lastUnderrunAt = Date.distantPast
     private var lastAdaptAt = Date()
@@ -130,7 +130,7 @@ final class AudioPipeline {
             self.packetMs = packetMs > 0 ? packetMs : 7
             self.streamID = streamID
             self.mode = mode
-            self.adaptiveMs = mode == .auto ? 100 : mode.prebufferMs
+            self.adaptiveMs = mode == .auto ? 120 : mode.prebufferMs
             self.resetBuffersLocked()
             self.buildEngineLocked()
             if self.engine != nil, self.player != nil {
@@ -232,8 +232,13 @@ final class AudioPipeline {
     // MARK: - Engine
 
     private func buildEngineLocked() {
-        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate,
-                                      channels: AVAudioChannelCount(channelCount)) else {
+        // Match the proven Doubao audio path: interleaved Int16 PCM.  Float
+        // buffers work in theory but add a conversion layer; Int16 is what the
+        // working client used and is the safest choice for AVAudioPlayerNode.
+        guard let fmt = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                      sampleRate: sampleRate,
+                                      channels: AVAudioChannelCount(channelCount),
+                                      interleaved: true) else {
             DispatchQueue.main.async { self.onError?("不支持的音频格式") }
             return
         }
@@ -316,7 +321,7 @@ final class AudioPipeline {
         lastSeq = nil
         recovering = false
         lastTrimAt = Date.distantPast
-        adaptiveMs = mode == .auto ? 100 : mode.prebufferMs
+        adaptiveMs = mode == .auto ? 120 : mode.prebufferMs
         lastAdaptAt = Date()
     }
 
@@ -472,25 +477,34 @@ final class AudioPipeline {
         let channels = Int(fmt.channelCount)
         let frames = packetFrames
         let fadeFrames = min(64, frames)
+        let sampleCount = frames * channels
 
         pcm.withUnsafeBytes { raw in
             let src = raw.bindMemory(to: Int16.self)
-            guard src.count >= frames * channels, let dst = buffer.floatChannelData else { return }
-            for ch in 0..<channels {
-                let out = dst[ch]
-                for i in 0..<frames {
-                    var value = Float(src[i * channels + ch]) / 32768.0
-                    if fadeIn && i < fadeFrames {
-                        value *= Float(i) / Float(fadeFrames)
+            guard src.count >= sampleCount,
+                  let dst = buffer.int16ChannelData?.pointee else { return }
+
+            if fadeIn {
+                // De-click after a concealment; the first 1–2 ms fades in.
+                for i in 0..<sampleCount {
+                    let frame = i / channels
+                    var value = src[i]
+                    if frame < fadeFrames {
+                        value = Int16(Double(value) * Double(frame) / Double(fadeFrames))
                     }
-                    out[i] = value
+                    dst[i] = value
                 }
+            } else {
+                dst.update(from: src.baseAddress!, count: sampleCount)
             }
         }
 
         let gen = generation
+        // Refill as soon as the buffer is consumed.  `.dataPlayedBack` only
+        // fires after the buffer has finished playing, which leaves the queue
+        // with less lookahead and is a classic cause of periodic underruns.
         player.scheduleBuffer(buffer, at: nil, options: [],
-                              completionCallbackType: .dataPlayedBack) { [weak self] _ in
+                              completionCallbackType: .dataConsumed) { [weak self] _ in
             guard let self = self else { return }
             self.queue.async {
                 guard self.generation == gen else { return }
@@ -550,7 +564,7 @@ final class AudioPipeline {
         smoothedLevel = max(mapped, smoothedLevel * 0.86)
 
         levelPushCounter += 1
-        if levelPushCounter >= 3 {
+        if levelPushCounter >= 6 {
             levelPushCounter = 0
             let value = smoothedLevel
             DispatchQueue.main.async { [weak self] in
