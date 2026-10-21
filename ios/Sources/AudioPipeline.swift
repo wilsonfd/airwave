@@ -54,8 +54,6 @@ final class AudioPipeline {
     private var generation: UInt64 = 0
     private var running = false
     private var paused = false
-    private var rebuilding = false
-    private var lastBuildAt = Date.distantPast
 
     private var sampleRate: Double = 48000
     private var channelCount: Int = 2
@@ -264,7 +262,6 @@ final class AudioPipeline {
         self.mixer = mixer
         self.format = fmt
         self.running = true
-        self.lastBuildAt = Date()
 
         engine.prepare()
         do {
@@ -325,21 +322,16 @@ final class AudioPipeline {
     }
 
     @objc private func engineConfigurationChanged() {
+        // Do NOT tear the pipeline down here.  A configuration change callback
+        // can arrive more than once (route change, session reconfiguration),
+        // and rebuilding resets the jitter buffer -> a guaranteed audible gap.
+        // If the engine actually stopped, just restart it in place.
         queue.async { [weak self] in
-            guard let self = self, self.running, !self.rebuilding else { return }
-            // Starting/stopping the engine can itself post this notification;
-            // ignore the immediate echo so we do not rebuild in a loop.
-            guard Date().timeIntervalSince(self.lastBuildAt) > 1.0 else { return }
-            self.rebuilding = true
-            self.generation &+= 1
-            self.teardownLocked()
-            self.resetBuffersLocked()
-            self.buildEngineLocked()
-            if self.engine != nil, self.player != nil {
-                self.startPumpLocked()
-                self.startStatsLocked()
+            guard let self = self, self.running, let engine = self.engine else { return }
+            if !engine.isRunning {
+                try? engine.start()
+                self.player?.play()
             }
-            self.rebuilding = false
         }
     }
 
