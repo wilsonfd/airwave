@@ -305,8 +305,7 @@ final class StreamManager: ObservableObject {
     }
 
     private func receiveLoopLocked(_ conn: NWConnection) {
-        conn.receiveMessage(minimumIncompleteLength: 1, maximumLength: 4096) {
-            [weak self, weak conn] data, _, _, error in
+        conn.receiveMessage { [weak self, weak conn] data, _, _, error in
             guard let self = self, let conn = conn, self.connection === conn else { return }
             if let error = error {
                 if self.wantConnected {
