@@ -72,7 +72,7 @@ jobs:
           xcrun simctl io "$SIM_UDID" screenshot ui-idle.png
 
           xcrun simctl terminate "$SIM_UDID" com.wilsonfd.airwave 2>/dev/null || true
-          xcrun simctl launch "$SIM_UDID" com.wilsonfd.airwave -ShowSettings -DemoSavedIPs
+          SIMCTL_CHILD_AIRWAVE_UITEST=1 xcrun simctl launch "$SIM_UDID" com.wilsonfd.airwave
           sleep 4
           xcrun simctl io "$SIM_UDID" screenshot ui-settings.png
           ls -lh ui-idle.png ui-settings.png
