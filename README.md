@@ -20,7 +20,7 @@
 | 问题 | 旧版 | AirWave 2.0 |
 |---|---|---|
 | 手机后台 1 秒断一次 | PC 端 3 秒收不到 HELLO 就踢掉客户端，iOS 后台定时器被合并时正好触发 | 客户端保留 15 秒；HELLO 间隔 0.75 秒；META 每 1.25 秒重发 |
-| 周期性“咔哒/断音” | iOS 只预排 1 个 5 ms 缓冲，播完才排下一个，调度慢一点就 underrun | iOS 持续保持 3–8 个缓冲的提前量，2 ms 定时补充；欠载自动重预缓冲 |
+| 周期性“咔哒/断音” | iOS 只预排 1 个 5 ms 缓冲，播完才排下一个，调度慢一点就 underrun | iOS 持续保持 3–8 个缓冲的提前量，4 ms 定时补充；欠载自动重预缓冲 |
 | 网络抖动就静音 | 丢包直接补零，听感是硬断 | 丢包用上一包做淡出隐藏（PLC），并自适应加大缓冲 |
 | 突发丢包 | 5 ms 小包，200 包/秒，WiFi 省电模式容易成串丢 | 默认 7 ms 包（143 包/秒），单包 ≤1400 字节，不触发 IP 分片；PC 发送线程与采集回调解耦 |
 | 延迟越用越大 | 缓冲堆积没有上限 | 队列深度限制 + 超时丢旧包，延迟不会滚雪球 |
@@ -42,9 +42,10 @@ AirWave/
 │   └── dist/           构建产物（exe、安装包）
 ├── ios/                iPhone 接收端（SwiftUI + Network + AVAudioEngine）
 │   ├── Sources/
-│   ├── project.yml     XcodeGen 工程定义
-│   └── .github/        GitHub Actions 未签名 IPA 构建
-├── assets/             图标源文件与生成脚本
+│   └── project.yml     XcodeGen 工程定义
+├── .github/workflows/  GitHub Actions 未签名 IPA 构建
+├── dist/               最终交付：Windows 安装包 + 未签名 IPA
+├── assets/             图标源文件、生成脚本、界面截图
 └── README.md
 ```
 
@@ -54,7 +55,7 @@ AirWave/
 
 ### 1. Windows
 
-1. 运行 `pc/dist/installer/AirWaveSetup-2.0.0.exe`。
+1. 运行 `dist/AirWaveSetup-2.0.0.exe`。
 2. 安装时保持勾选“添加 Windows 防火墙规则”。
 3. 打开 AirWave，音频来源选 **系统声音**（默认就是当前扬声器回环）。
 4. 点中间的大圆按钮“开始推流”，记下右上角显示的 IP。
@@ -63,7 +64,7 @@ AirWave/
 
 ### 2. iPhone
 
-1. 用 Sideloadly + 免费 Apple ID 安装 `AirWave-unsigned.ipa`（7 天需重签）。
+1. 用 Sideloadly + 免费 Apple ID 安装 `dist/AirWave-2.0.0-unsigned.ipa`（7 天需重签）。
 2. 手机和电脑连同一个 WiFi。
 3. 打开 AirWave，右上角设置里填电脑 IP，端口 `13666`。
 4. 点中间圆钮连接；状态变成“正在播放”后，电脑放什么手机就响什么。
@@ -116,15 +117,16 @@ python -m PyInstaller AirWaveServer.spec
 & "C:\Program Files\Inno Setup 7\ISCC.exe" installer.iss
 ```
 
-产物：
-- `dist/AirWaveSetup-2.0.0.exe`（Windows 安装包）
-- `dist/AirWave-2.0.0-unsigned.ipa`（iPhone 未签名安装包）
+构建产物在 `pc/dist/`：
 - `pc/dist/AirWaveServer.exe`（绿色单文件版）
+- `pc/dist/installer/AirWaveSetup-2.0.0.exe`（Windows 安装包）
+
+最终交付目录 `dist/` 汇总了安装包和未签名 IPA。
 
 诊断（不启动 GUI，输出设备列表）：
 
 ```powershell
-.\dist\AirWaveServer.exe --diagnose-out diag.txt
+.\pc\dist\AirWaveServer.exe --diagnose-out diag.txt
 ```
 
 ### iPhone
