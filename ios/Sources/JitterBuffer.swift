@@ -10,7 +10,11 @@ struct PacketJitterBuffer {
     private(set) var expected: UInt32 = 0
     private(set) var primed = false
     private(set) var started = false
-    var maxPackets = 80
+    var maxPackets = 120
+
+    func contains(_ seq: UInt32) -> Bool {
+        packets[seq] != nil
+    }
 
     var count: Int { packets.count }
 
