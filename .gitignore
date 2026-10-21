@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+pc/build/
+pc/dist/
+pc/*.log
+pc/tests/shot_*.png
+pc/tests/smoke_13579.py
+.pytest_cache/
+ios/build/
+ios/DerivedData/
+.DS_Store
+*.ipa
