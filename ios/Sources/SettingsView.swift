@@ -13,6 +13,8 @@ struct SettingsView: View {
     @State private var draftIP = ""
     @State private var draftPort = ""
     @State private var validationMessage: String? = nil
+    @State private var saved: [SavedEndpoint] = []
+    @State private var savedFlash = false
 
     private enum Field: Hashable {
         case ip
@@ -28,6 +30,7 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 14) {
                         connectionCard
+                        savedCard
                         latencyCard
                         playbackCard
                         statsCard
@@ -58,6 +61,15 @@ struct SettingsView: View {
         .onAppear {
             draftIP = ip
             draftPort = port
+            saved = SavedEndpointsStore.load()
+            if saved.isEmpty, ProcessInfo.processInfo.arguments.contains("-DemoSavedIPs") {
+                saved = [
+                    SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
+                    SavedEndpoint(host: "192.168.1.88", port: 13666,
+                                  lastUsed: Date().addingTimeInterval(-7200)),
+                ]
+                SavedEndpointsStore.save(saved)
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -84,6 +96,129 @@ struct SettingsView: View {
                     Text("电脑上打开 AirWave 后，右上角会显示本机 IP 和端口 13666。")
                         .font(AWFont.rounded(10, .regular))
                         .foregroundColor(.awDim)
+                }
+
+                HStack(spacing: 8) {
+                    Button {
+                        saveDraft()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: savedFlash ? "checkmark.circle.fill" : "square.and.arrow.down")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(savedFlash ? "已保存" : "保存此地址")
+                                .font(AWFont.rounded(11, .semibold))
+                        }
+                        .foregroundColor(savedFlash ? .awMint : .awAccent)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule().fill((savedFlash ? Color.awMint : Color.awAccent).opacity(0.12))
+                        )
+                        .overlay(
+                            Capsule().stroke(
+                                (savedFlash ? Color.awMint : Color.awAccent).opacity(0.28),
+                                lineWidth: 1
+                            )
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    Spacer()
+
+                    Text(saved.isEmpty ? "还没有保存的地址" : "已保存 \(saved.count) 个地址")
+                        .font(AWFont.rounded(9.5, .regular))
+                        .foregroundColor(.awDim)
+                }
+            }
+        }
+    }
+
+    private var savedCard: some View {
+        GlassCard(corner: 22) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    SectionLabel(text: "已保存的电脑")
+                    Spacer()
+                    if !saved.isEmpty {
+                        Text("点击填入")
+                            .font(AWFont.rounded(9.5, .regular))
+                            .foregroundColor(.awDim)
+                    }
+                }
+
+                if saved.isEmpty {
+                    HStack(spacing: 8) {
+                        Image(systemName: "bookmark")
+                            .font(.system(size: 12))
+                            .foregroundColor(.awDim)
+                        Text("在上方填写 IP 和端口，点“保存此地址”，以后就不用再输入了。")
+                            .font(AWFont.rounded(10.5, .regular))
+                            .foregroundColor(.awDim)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+                } else {
+                    ForEach(Array(saved.enumerated()), id: \.element.id) { index, item in
+                        HStack(spacing: 8) {
+                            Button {
+                                draftIP = item.host
+                                draftPort = "\(item.port)"
+                                validationMessage = nil
+                                savedFlash = false
+                                focused = nil
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "desktopcomputer")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.awAccent)
+                                        .frame(width: 18)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.host)
+                                            .font(AWFont.mono(12.5, .semibold))
+                                            .foregroundColor(.awText)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                        Text("端口 \(item.port) · \(lastUsedText(item.lastUsed))")
+                                            .font(AWFont.rounded(9.5, .regular))
+                                            .foregroundColor(.awDim)
+                                    }
+                                    Spacer(minLength: 4)
+                                    if isDraft(item) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.awMint)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(PlainButtonStyle())
+
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    saved = SavedEndpointsStore.remove(id: item.id, from: saved)
+                                    SavedEndpointsStore.save(saved)
+                                }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.awDim)
+                                    .frame(width: 30, height: 30)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        .padding(.vertical, 5)
+
+                        if index < saved.count - 1 {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.06))
+                                .frame(height: 1)
+                        }
+                    }
+
+                    Text("最多保存 \(SavedEndpointsStore.maxCount) 个地址；点右侧垃圾桶可删除。")
+                        .font(AWFont.rounded(9.5, .regular))
+                        .foregroundColor(.awDim)
+                        .padding(.top, 2)
                 }
             }
         }
@@ -294,6 +429,51 @@ struct SettingsView: View {
         }
     }
 
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter
+    }()
+
+    private func lastUsedText(_ date: Date) -> String {
+        Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func isDraft(_ item: SavedEndpoint) -> Bool {
+        guard let value = Int(draftPort) else { return false }
+        return item.host.caseInsensitiveCompare(draftIP.trimmingCharacters(in: .whitespaces)) == .orderedSame
+            && item.port == value
+    }
+
+    private func saveDraft() {
+        let trimmedIP = draftIP.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPort = draftPort.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedIP.isEmpty else {
+            validationMessage = "请填写电脑的局域网 IP"
+            focused = .ip
+            return
+        }
+        guard let value = Int(trimmedPort), value >= 1024, value <= 65535 else {
+            validationMessage = "端口需在 1024–65535 之间"
+            focused = .port
+            return
+        }
+
+        validationMessage = nil
+        saved = SavedEndpointsStore.add(host: trimmedIP, port: value, to: saved)
+        SavedEndpointsStore.save(saved)
+        focused = nil
+        withAnimation(.easeInOut(duration: 0.2)) {
+            savedFlash = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                savedFlash = false
+            }
+        }
+    }
+
     private func applyAndClose() {
         let trimmedIP = draftIP.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedPort = draftPort.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -312,6 +492,8 @@ struct SettingsView: View {
         validationMessage = nil
         ip = trimmedIP
         port = String(value)
+        saved = SavedEndpointsStore.add(host: trimmedIP, port: value, to: saved)
+        SavedEndpointsStore.save(saved)
         manager.autoReconnect = autoReconnect
         dismiss()
     }
