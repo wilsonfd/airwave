@@ -70,7 +70,12 @@ jobs:
           xcrun simctl launch "$SIM_UDID" com.wilsonfd.airwave
           sleep 4
           xcrun simctl io "$SIM_UDID" screenshot ui-idle.png
-          ls -lh ui-idle.png
+
+          xcrun simctl terminate "$SIM_UDID" com.wilsonfd.airwave 2>/dev/null || true
+          xcrun simctl launch "$SIM_UDID" com.wilsonfd.airwave -ShowSettings -DemoSavedIPs
+          sleep 4
+          xcrun simctl io "$SIM_UDID" screenshot ui-settings.png
+          ls -lh ui-idle.png ui-settings.png
 
       - name: Publish screenshot to ui-snapshot branch
         run: |
@@ -79,9 +84,10 @@ jobs:
           git config user.email "bot@local"
           mkdir -p docs
           cp ios/ui-idle.png docs/ios-ui.png
+          cp ios/ui-settings.png docs/ios-settings.png
           git checkout -B ui-snapshot
-          git add docs/ios-ui.png
-          git commit -m "Update iPhone UI snapshot [skip ci]"
+          git add docs/ios-ui.png docs/ios-settings.png
+          git commit -m "Update iPhone UI snapshots [skip ci]"
           git push -f origin ui-snapshot
 
       - name: Upload screenshot
@@ -89,6 +95,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AirWave-ui-snapshot
-          path: ios/ui-idle.png
+          path: |
+            ios/ui-idle.png
+            ios/ui-settings.png
           if-no-files-found: ignore
           retention-days: 7
