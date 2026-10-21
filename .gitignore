@@ -10,8 +10,12 @@ ios/build/
 ios/DerivedData/
 .DS_Store
 *.ipa
-build-logs/
-build-logs.zip
+build-logs*/
+build-logs*.zip
 ios/artifact/
 ios/payload/
+ios/final/
 ios/*.zip
+dist/
+pc/test-install/
+

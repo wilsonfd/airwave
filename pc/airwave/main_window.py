@@ -440,6 +440,17 @@ class MainWindow(QWidget):
 
         if self._devices:
             self._on_device_changed(self.device_combo.currentIndex())
+            # Device selection resets rate/channels to the device defaults;
+            # re-apply the user's saved choices on startup.
+            saved_rate = int(self.settings.value("rate", 48000))
+            saved_ch = int(self.settings.value("channels", 2))
+            ridx = self.rate_combo.findData(saved_rate)
+            if ridx >= 0:
+                self.rate_combo.setCurrentIndex(ridx)
+            cidx = self.ch_combo.findData(saved_ch)
+            if cidx >= 0:
+                self.ch_combo.setCurrentIndex(cidx)
+            self._update_detail()
             self._append_log(f"找到 {len(self._devices)} 个音频设备")
         else:
             self.power.setEnabled(False)

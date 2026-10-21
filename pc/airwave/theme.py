@@ -211,4 +211,23 @@ QToolTip {{
     padding: 5px 8px;
     border-radius: 6px;
 }}
+QMenu {{
+    background-color: #0E1A2C;
+    border: 1px solid #22344F;
+    padding: 6px;
+}}
+QMenu::item {{
+    padding: 7px 24px 7px 14px;
+    border-radius: 6px;
+    color: #C9D6EA;
+}}
+QMenu::item:selected {{
+    background-color: #1B2F4B;
+    color: #FFFFFF;
+}}
+QMenu::separator {{
+    height: 1px;
+    background: #1B2B44;
+    margin: 5px 8px;
+}}
 """

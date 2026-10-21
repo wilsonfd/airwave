@@ -4,7 +4,11 @@
 **只传音频，不传屏幕**；锁屏、切后台继续播放，并且和其他 App 的声音混音共存。
 
 <p align="center">
-  <img src="assets/preview_ios.png" width="180" alt="AirWave 图标">
+  <img src="assets/preview_ios.png" width="150" alt="AirWave 图标">
+</p>
+
+<p align="center">
+  <img src="assets/pc-ui.png" width="820" alt="AirWave Windows 端">
 </p>
 
 ---
@@ -113,8 +117,9 @@ python -m PyInstaller AirWaveServer.spec
 ```
 
 产物：
-- `pc/dist/AirWaveServer.exe`
-- `pc/dist/installer/AirWaveSetup-2.0.0.exe`
+- `dist/AirWaveSetup-2.0.0.exe`（Windows 安装包）
+- `dist/AirWave-2.0.0-unsigned.ipa`（iPhone 未签名安装包）
+- `pc/dist/AirWaveServer.exe`（绿色单文件版）
 
 诊断（不启动 GUI，输出设备列表）：
 

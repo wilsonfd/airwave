@@ -119,15 +119,16 @@ def main() -> int:
     # Single instance: a second launch just brings the existing window forward.
     probe = QLocalSocket()
     probe.connectToServer("AirWave.Server")
-    if probe.waitForConnected(250):
+    if probe.waitForConnected(1500):
         probe.write(b"show")
         probe.flush()
         probe.waitForBytesWritten(300)
         probe.disconnectFromServer()
         return 0
-    QLocalServer.removeServer("AirWave.Server")
     local = QLocalServer()
-    local.listen("AirWave.Server")
+    if not local.listen("AirWave.Server"):
+        QLocalServer.removeServer("AirWave.Server")
+        local.listen("AirWave.Server")
 
     from airwave.main_window import MainWindow
 
