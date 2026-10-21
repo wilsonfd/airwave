@@ -34,10 +34,11 @@ enum AWFont {
     }
 }
 
-/// Slowly drifting aurora that shifts with the connection state.
+/// Static aurora.  The previous version animated three large Gaussian-blurred
+/// circles at 20 fps; that kept the GPU/main thread busy and made the audio
+/// engine fight the UI.  The colour field is still there, just static.
 struct AuroraBackground: View {
     let phase: StreamManager.Phase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var topColor: Color {
         switch phase {
@@ -58,37 +59,31 @@ struct AuroraBackground: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            ZStack {
-                LinearGradient(
-                    colors: [topColor, Color.awBg, bottomColor],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+        ZStack {
+            LinearGradient(
+                colors: [topColor, Color.awBg, bottomColor],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
 
-                Circle()
-                    .fill(Color.awAccent.opacity(phase == .playing ? 0.20 : 0.13))
-                    .frame(width: 460, height: 460)
-                    .blur(radius: 110)
-                    .offset(x: -150 + sin(t * 0.12) * 28,
-                            y: -300 + cos(t * 0.10) * 22)
+            Circle()
+                .fill(Color.awAccent.opacity(phase == .playing ? 0.20 : 0.13))
+                .frame(width: 460, height: 460)
+                .blur(radius: 110)
+                .offset(x: -150, y: -300)
 
-                Circle()
-                    .fill(Color.awViolet.opacity(phase == .playing ? 0.22 : 0.15))
-                    .frame(width: 420, height: 420)
-                    .blur(radius: 120)
-                    .offset(x: 160 + cos(t * 0.09) * 34,
-                            y: 300 + sin(t * 0.11) * 26)
+            Circle()
+                .fill(Color.awViolet.opacity(phase == .playing ? 0.22 : 0.15))
+                .frame(width: 420, height: 420)
+                .blur(radius: 120)
+                .offset(x: 160, y: 300)
 
-                // A faint vignette keeps the center readable.
-                RadialGradient(
-                    colors: [Color.clear, Color.black.opacity(0.34)],
-                    center: .center,
-                    startRadius: 180,
-                    endRadius: 520
-                )
-            }
+            RadialGradient(
+                colors: [Color.clear, Color.black.opacity(0.34)],
+                center: .center,
+                startRadius: 180,
+                endRadius: 520
+            )
         }
         .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.8), value: phase)
