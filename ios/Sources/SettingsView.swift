@@ -28,6 +28,8 @@ struct SettingsView: View {
                     .ignoresSafeArea()
 
                 GeometryReader { geo in
+                    let contentWidth = max(0, min(geo.size.width,
+                                                   UIScreen.main.bounds.width) - 36)
                     ScrollView {
                         VStack(spacing: 14) {
                             connectionCard
@@ -38,7 +40,7 @@ struct SettingsView: View {
                             helpCard
                             applyButton
                         }
-                        .frame(width: max(0, geo.size.width - 36))
+                        .frame(width: contentWidth)
                         .padding(.horizontal, 18)
                         .padding(.top, 12)
                         .padding(.bottom, 28)
@@ -66,8 +68,10 @@ struct SettingsView: View {
             draftIP = ip
             draftPort = port
             saved = SavedEndpointsStore.load()
-            if saved.isEmpty,
-               ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
+            #if DEBUG
+            // The simulator UI snapshot needs a few rows to show the saved-IP
+            // layout; Release builds never seed demo data.
+            if saved.isEmpty {
                 saved = [
                     SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
                     SavedEndpoint(host: "192.168.1.88", port: 13666,
@@ -75,6 +79,7 @@ struct SettingsView: View {
                 ]
                 SavedEndpointsStore.save(saved)
             }
+            #endif
         }
         .preferredColorScheme(.dark)
     }
