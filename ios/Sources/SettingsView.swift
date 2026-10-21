@@ -13,7 +13,18 @@ struct SettingsView: View {
     @State private var draftIP = ""
     @State private var draftPort = ""
     @State private var validationMessage: String? = nil
-    @State private var saved: [SavedEndpoint] = []
+    @State private var saved: [SavedEndpoint] = {
+        var items = SavedEndpointsStore.load()
+        if items.isEmpty,
+           ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
+            items = [
+                SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
+                SavedEndpoint(host: "192.168.1.88", port: 13666,
+                              lastUsed: Date().addingTimeInterval(-7200)),
+            ]
+        }
+        return items
+    }()
     @State private var savedFlash = false
 
     private enum Field: Hashable {
@@ -67,18 +78,6 @@ struct SettingsView: View {
         .onAppear {
             draftIP = ip
             draftPort = port
-            saved = SavedEndpointsStore.load()
-            // Only the simulator UI snapshot sets AIRWAVE_UITEST; normal builds
-            // start with an empty list and fill it from the save button.
-            if saved.isEmpty,
-               ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
-                saved = [
-                    SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
-                    SavedEndpoint(host: "192.168.1.88", port: 13666,
-                                  lastUsed: Date().addingTimeInterval(-7200)),
-                ]
-                SavedEndpointsStore.save(saved)
-            }
         }
         .preferredColorScheme(.dark)
     }
