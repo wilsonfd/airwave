@@ -236,6 +236,8 @@ struct ModeSelector: View {
                     Text(mode.title)
                         .font(AWFont.rounded(11.5, .semibold))
                         .foregroundColor(selection == mode ? .awBg : .awMuted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 7)
                         .background(
