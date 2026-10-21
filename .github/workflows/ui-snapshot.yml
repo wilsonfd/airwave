@@ -1,0 +1,66 @@
+name: UI Snapshot (simulator)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: macos-14
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          if [ -d /Applications/Xcode_16.2.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app
+          elif [ -d /Applications/Xcode_16.1.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.1.app
+          fi
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build for simulator
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project AirWave.xcodeproj \
+            -scheme AirWave \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -derivedDataPath build/Sim \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee build/sim-build.log
+
+      - name: Boot simulator and capture
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcrun simctl boot "iPhone 15" 2>/dev/null || true
+          xcrun simctl bootstatus "iPhone 15" -b
+          APP="build/Sim/Build/Products/Debug-iphonesimulator/AirWave.app"
+          test -d "$APP"
+          xcrun simctl install "iPhone 15" "$APP"
+          xcrun simctl launch "iPhone 15" com.wilsonfd.airwave
+          sleep 4
+          xcrun simctl io "iPhone 15" screenshot ui-idle.png
+          ls -lh ui-idle.png
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirWave-ui-snapshot
+          path: ios/ui-idle.png
+          if-no-files-found: error
+          retention-days: 7
