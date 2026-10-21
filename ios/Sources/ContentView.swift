@@ -43,7 +43,7 @@ struct ContentView: View {
         }
         .onAppear {
             manager.autoReconnect = autoReconnect
-            if ProcessInfo.processInfo.arguments.contains("-ShowSettings") {
+            if ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                     showSettings = true
                 }
