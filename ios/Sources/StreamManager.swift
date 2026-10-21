@@ -23,18 +23,18 @@ enum LatencyMode: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .auto: return "自动调节"
-        case .low: return "约 80 ms"
-        case .balanced: return "约 120 ms"
-        case .stable: return "约 200 ms"
+        case .low: return "约 90 ms"
+        case .balanced: return "约 140 ms"
+        case .stable: return "约 300 ms"
         }
     }
 
     var detail: String {
         switch self {
         case .auto: return "按网络抖动自动调整，推荐"
-        case .low: return "约 70–90 ms，适合同一房间"
-        case .balanced: return "约 110–140 ms，日常使用"
-        case .stable: return "约 200 ms，隔墙/弱网更稳"
+        case .low: return "约 80–110 ms，适合同一房间"
+        case .balanced: return "约 120–170 ms，日常使用"
+        case .stable: return "约 280–340 ms，隔墙/弱网更稳"
         }
     }
 
@@ -252,6 +252,7 @@ final class StreamManager: ObservableObject {
         let params = NWParameters.udp
         params.allowLocalEndpointReuse = true
         params.includePeerToPeer = false
+        params.serviceClass = .interactiveVoice
         guard let endpointPort = NWEndpoint.Port(rawValue: port) else { return }
 
         // Force the next META to rebuild the audio pipeline.  Without this a
