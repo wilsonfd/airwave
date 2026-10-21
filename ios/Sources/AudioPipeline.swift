@@ -28,19 +28,19 @@ final class AudioPipeline {
 
         var prebufferMs: Double {
             switch self {
-            case .auto: return 80
-            case .low: return 45
-            case .balanced: return 85
-            case .stable: return 160
+            case .auto: return 100
+            case .low: return 60
+            case .balanced: return 100
+            case .stable: return 240
             }
         }
 
         var leadBuffers: Int {
             switch self {
-            case .auto: return 4
+            case .auto: return 5
             case .low: return 3
-            case .balanced: return 4
-            case .stable: return 6
+            case .balanced: return 5
+            case .stable: return 8
             }
         }
     }
@@ -79,7 +79,7 @@ final class AudioPipeline {
     private var packetsReceived = 0
     private var packetsLost = 0
     private var underruns = 0
-    private var adaptiveMs: Double = 80
+    private var adaptiveMs: Double = 100
     private var lastLossAt = Date.distantPast
     private var lastUnderrunAt = Date.distantPast
     private var lastAdaptAt = Date()
@@ -130,7 +130,7 @@ final class AudioPipeline {
             self.packetMs = packetMs > 0 ? packetMs : 7
             self.streamID = streamID
             self.mode = mode
-            self.adaptiveMs = mode == .auto ? 80 : mode.prebufferMs
+            self.adaptiveMs = mode == .auto ? 100 : mode.prebufferMs
             self.resetBuffersLocked()
             self.buildEngineLocked()
             if self.engine != nil, self.player != nil {
@@ -189,15 +189,6 @@ final class AudioPipeline {
             let expectedBytes = self.packetFrames * self.channelCount * 2
             guard pcm.count == expectedBytes else { return }
 
-            self.packetsReceived += 1
-            let now = Date()
-            if let last = self.lastArrival {
-                let deltaMs = now.timeIntervalSince(last) * 1000
-                let deviation = abs(deltaMs - self.packetMs)
-                self.arrivalJitterMs = self.arrivalJitterMs * 0.9 + deviation * 0.1
-            }
-            self.lastArrival = now
-
             if self.jitter.started {
                 let ahead = PacketJitterBuffer.distance(from: self.jitter.expected, to: seq)
                 if ahead > 400 || ahead < -200 {
@@ -206,9 +197,25 @@ final class AudioPipeline {
                     self.scheduled = 0
                     self.didStart = false
                 } else if PacketJitterBuffer.isBefore(seq, self.jitter.expected) && self.jitter.primed {
+                    // A late duplicate of an already consumed packet.
                     return
                 }
             }
+            // The PC intentionally sends every packet twice.  Do not count the
+            // second copy as a received packet, otherwise the loss percentage
+            // looks artificially low.
+            if self.jitter.contains(seq) {
+                return
+            }
+
+            self.packetsReceived += 1
+            let now = Date()
+            if let last = self.lastArrival {
+                let deltaMs = now.timeIntervalSince(last) * 1000
+                let deviation = abs(deltaMs - self.packetMs)
+                self.arrivalJitterMs = self.arrivalJitterMs * 0.9 + deviation * 0.1
+            }
+            self.lastArrival = now
             self.lastSeq = seq
             self.jitter.insert(seq: seq, pcm: pcm)
             let primeTarget = self.recovering
@@ -309,7 +316,7 @@ final class AudioPipeline {
         lastSeq = nil
         recovering = false
         lastTrimAt = Date.distantPast
-        adaptiveMs = mode == .auto ? 80 : mode.prebufferMs
+        adaptiveMs = mode == .auto ? 100 : mode.prebufferMs
         lastAdaptAt = Date()
     }
 
@@ -375,7 +382,7 @@ final class AudioPipeline {
         }
 
         // Bound latency drift (the PC and iPhone crystals are not identical).
-        let maxJitter = prebufferPackets + leadBuffers + 12
+        let maxJitter = prebufferPackets + leadBuffers + 16
         if jitter.count > maxJitter, Date().timeIntervalSince(lastTrimAt) > 2.0 {
             jitter.skipExpected()
             packetsLost += 1
@@ -499,11 +506,11 @@ final class AudioPipeline {
             let recentLoss = now.timeIntervalSince(lastLossAt) < 3.0
             let recentUnderrun = now.timeIntervalSince(lastUnderrunAt) < 3.0
             if (recentLoss || recentUnderrun) && now.timeIntervalSince(lastAdaptAt) > 1.5 {
-                adaptiveMs = min(240, adaptiveMs + 15)
+                adaptiveMs = min(320, adaptiveMs + 20)
                 lastAdaptAt = now
             } else if !recentLoss && !recentUnderrun &&
-                        now.timeIntervalSince(lastAdaptAt) > 15 && adaptiveMs > 55 {
-                adaptiveMs = max(55, adaptiveMs - 8)
+                        now.timeIntervalSince(lastAdaptAt) > 20 && adaptiveMs > 60 {
+                adaptiveMs = max(60, adaptiveMs - 8)
                 lastAdaptAt = now
             }
         }
