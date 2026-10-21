@@ -5,26 +5,28 @@ struct EqualizerBars: View {
     let active: Bool
     var tint: Color = .awMint
 
+    // No TimelineView here: the level already updates ~16 fps from the audio
+    // tap, and driving another 24 fps animation made the UI compete with the
+    // audio engine on older iPhones.
+    private let factors: [CGFloat] = [0.55, 0.82, 1.0, 0.72, 0.46]
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: !active)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            HStack(alignment: .center, spacing: 5) {
-                ForEach(0..<5, id: \.self) { index in
-                    let wave = 0.5 + 0.5 * sin(t * 3.1 + Double(index) * 0.9)
-                    let height = 10 + (level * 0.72 + CGFloat(wave) * 0.28) * 46
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [tint, tint.opacity(0.55)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+        HStack(alignment: .center, spacing: 5) {
+            ForEach(0..<5, id: \.self) { index in
+                let height = active ? 8 + level * 46 * factors[index] : 8
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [tint, tint.opacity(0.55)],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .frame(width: 6, height: height)
-                }
+                    )
+                    .frame(width: 6, height: height)
             }
-            .frame(height: 58)
         }
+        .frame(height: 58)
+        .animation(.easeOut(duration: 0.08), value: level)
     }
 }
 
