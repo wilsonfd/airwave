@@ -33,6 +33,12 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
                 .padding(.bottom, 10)
+                .border(Color.red, width: 1)
+                .overlay(alignment: .topLeading) {
+                    Text("geo \(Int(geo.size.width))x\(Int(geo.size.height)) safe \(Int(geo.safeAreaInsets.leading)),\(Int(geo.safeAreaInsets.trailing))")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.red)
+                }
             }
         }
         .sheet(isPresented: $showSettings) {
