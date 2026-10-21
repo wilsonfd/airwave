@@ -27,21 +27,24 @@ struct SettingsView: View {
                 AuroraBackground(phase: manager.phase)
                     .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 14) {
-                        connectionCard
-                        savedCard
-                        latencyCard
-                        playbackCard
-                        statsCard
-                        helpCard
-                        applyButton
+                GeometryReader { geo in
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            connectionCard
+                            savedCard
+                            latencyCard
+                            playbackCard
+                            statsCard
+                            helpCard
+                            applyButton
+                        }
+                        .frame(width: max(0, geo.size.width - 36))
+                        .padding(.top, 12)
+                        .padding(.bottom, 28)
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.top, 12)
-                    .padding(.bottom, 28)
+                    .onTapGesture { focused = nil }
                 }
-                .onTapGesture { focused = nil }
             }
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.inline)
@@ -96,6 +99,7 @@ struct SettingsView: View {
                     Text("电脑上打开 AirWave 后，右上角会显示本机 IP 和端口 13666。")
                         .font(AWFont.rounded(10, .regular))
                         .foregroundColor(.awDim)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 HStack(spacing: 8) {
@@ -178,9 +182,11 @@ struct SettingsView: View {
                                             .foregroundColor(.awText)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
-                                        Text("端口 \(item.port) · \(lastUsedText(item.lastUsed))")
+                                        Text("端口 " + String(item.port) + " · " + lastUsedText(item.lastUsed))
                                             .font(AWFont.rounded(9.5, .regular))
                                             .foregroundColor(.awDim)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
                                     }
                                     Spacer(minLength: 4)
                                     if isDraft(item) {
@@ -432,6 +438,7 @@ struct SettingsView: View {
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
+        formatter.locale = Locale(identifier: "zh_CN")
         return formatter
     }()
 
