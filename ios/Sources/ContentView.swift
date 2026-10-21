@@ -29,10 +29,10 @@ struct ContentView: View {
                     Spacer(minLength: 10)
                     bottomPanel
                 }
-                .padding(.horizontal, 20)
+                .frame(width: max(0, geo.size.width - 40))
+                .frame(maxWidth: .infinity)
                 .padding(.top, 4)
                 .padding(.bottom, 10)
-                .frame(maxWidth: .infinity)
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -160,6 +160,7 @@ struct ContentView: View {
                         .font(AWFont.rounded(9.5, .regular))
                         .foregroundColor(.awDim)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 ModeSelector(selection: Binding(
@@ -196,7 +197,8 @@ struct ContentView: View {
                         .font(AWFont.rounded(10, .regular))
                         .foregroundColor(.awDim)
                         .multilineTextAlignment(.center)
-                        .lineLimit(2)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
                 }
             }
