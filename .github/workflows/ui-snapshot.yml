@@ -44,6 +44,7 @@ jobs:
       - name: Build for simulator
         working-directory: ios
         run: |
+          mkdir -p build
           xcodebuild \
             -project AirWave.xcodeproj \
             -scheme AirWave \
