@@ -252,7 +252,6 @@ final class StreamManager: ObservableObject {
         let params = NWParameters.udp
         params.allowLocalEndpointReuse = true
         params.includePeerToPeer = false
-        params.serviceClass = .interactiveVoice
         guard let endpointPort = NWEndpoint.Port(rawValue: port) else { return }
 
         // Force the next META to rebuild the audio pipeline.  Without this a
@@ -414,11 +413,20 @@ final class StreamManager: ObservableObject {
     private func watchdogTickLocked() {
         guard wantConnected, connection != nil else { return }
         let now = Date()
-        if now.timeIntervalSince(lastPacketAt) > 4.0 {
-            handleFailureLocked("电脑没有响应")
-            return
-        }
-        if now.timeIntervalSince(lastAudioAt) > 2.5 {
+        // Do not tear down and reconnect just because packets paused.  While
+        // locked/backgrounded iOS may coalesce network wake-ups; reconnecting
+        // would reset the jitter buffer and turn a short pause into a stutter
+        // loop.  Just ask the PC for metadata and show a waiting state.
+        if now.timeIntervalSince(lastPacketAt) > 8.0 {
+            sendHelloLocked()
+            DispatchQueue.main.async {
+                guard self.wantConnected, self.phase != .reconnecting else { return }
+                if self.phase == .playing {
+                    self.phase = .waiting
+                    self.statusText = "电脑暂时没有响应，点圆钮可重连"
+                }
+            }
+        } else if now.timeIntervalSince(lastAudioAt) > 2.5 {
             DispatchQueue.main.async {
                 guard self.wantConnected, self.phase == .playing else { return }
                 self.phase = .waiting
