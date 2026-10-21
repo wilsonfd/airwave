@@ -104,7 +104,7 @@ struct SettingsView: View {
                                 Text(mode.title)
                                     .font(AWFont.rounded(13.5, .semibold))
                                     .foregroundColor(.awText)
-                                Text(mode.subtitle)
+                                Text(mode.detail)
                                     .font(AWFont.rounded(10, .regular))
                                     .foregroundColor(.awDim)
                                     .multilineTextAlignment(.leading)
