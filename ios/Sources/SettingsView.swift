@@ -68,10 +68,10 @@ struct SettingsView: View {
             draftIP = ip
             draftPort = port
             saved = SavedEndpointsStore.load()
-            #if DEBUG
-            // The simulator UI snapshot needs a few rows to show the saved-IP
-            // layout; Release builds never seed demo data.
-            if saved.isEmpty {
+            // Only the simulator UI snapshot sets AIRWAVE_UITEST; normal builds
+            // start with an empty list and fill it from the save button.
+            if saved.isEmpty,
+               ProcessInfo.processInfo.environment["AIRWAVE_UITEST"] == "1" {
                 saved = [
                     SavedEndpoint(host: "192.168.1.30", port: 13666, lastUsed: Date()),
                     SavedEndpoint(host: "192.168.1.88", port: 13666,
@@ -79,7 +79,6 @@ struct SettingsView: View {
                 ]
                 SavedEndpointsStore.save(saved)
             }
-            #endif
         }
         .preferredColorScheme(.dark)
     }
