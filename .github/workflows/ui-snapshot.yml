@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   snapshot:
@@ -72,10 +72,23 @@ jobs:
           xcrun simctl io "$SIM_UDID" screenshot ui-idle.png
           ls -lh ui-idle.png
 
+      - name: Publish screenshot to ui-snapshot branch
+        run: |
+          set -euo pipefail
+          git config user.name "AirWave Bot"
+          git config user.email "bot@local"
+          mkdir -p docs
+          cp ios/ui-idle.png docs/ios-ui.png
+          git checkout -B ui-snapshot
+          git add docs/ios-ui.png
+          git commit -m "Update iPhone UI snapshot [skip ci]"
+          git push -f origin ui-snapshot
+
       - name: Upload screenshot
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: AirWave-ui-snapshot
           path: ios/ui-idle.png
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 7
