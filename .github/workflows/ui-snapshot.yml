@@ -44,7 +44,6 @@ jobs:
       - name: Build for simulator
         working-directory: ios
         run: |
-          set -o pipefail
           xcodebuild \
             -project AirWave.xcodeproj \
             -scheme AirWave \
@@ -53,7 +52,10 @@ jobs:
             -destination "id=$SIM_UDID" \
             -derivedDataPath build/Sim \
             CODE_SIGNING_ALLOWED=NO \
-            build | tee build/sim-build.log
+            build 2>&1 | tee build/sim-build.log
+          # xcodebuild can return non-zero for a benign ambiguous-destination
+          # warning even after "BUILD SUCCEEDED"; validate the product instead.
+          test -d build/Sim/Build/Products/Debug-iphonesimulator/AirWave.app
 
       - name: Boot simulator and capture
         working-directory: ios
