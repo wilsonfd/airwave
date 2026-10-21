@@ -37,10 +37,10 @@ final class AudioPipeline {
 
         var leadBuffers: Int {
             switch self {
-            case .auto: return 8
-            case .low: return 4
-            case .balanced: return 8
-            case .stable: return 10
+            case .auto: return 14
+            case .low: return 6
+            case .balanced: return 14
+            case .stable: return 18
             }
         }
     }
