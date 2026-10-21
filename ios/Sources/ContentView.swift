@@ -133,7 +133,7 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 4)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(height: 30)
                 .padding(.top, 2)
             } else if !ip.isEmpty {
                 Text("\(ip) : \(port)")

@@ -162,7 +162,6 @@ struct SectionLabel: View {
             .font(AWFont.mono(10, .semibold))
             .foregroundColor(Color.awDim)
             .tracking(1.2)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

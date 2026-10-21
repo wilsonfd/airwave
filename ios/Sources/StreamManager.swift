@@ -190,6 +190,7 @@ final class StreamManager: ObservableObject {
             self.lossPercent = 0
             self.underruns = 0
             self.receivedPackets = 0
+            self.reconnects = 0
         }
 
         netQueue.async { [weak self] in
@@ -243,6 +244,11 @@ final class StreamManager: ObservableObject {
         params.allowLocalEndpointReuse = true
         params.includePeerToPeer = false
         guard let endpointPort = NWEndpoint.Port(rawValue: port) else { return }
+
+        // Force the next META to rebuild the audio pipeline.  Without this a
+        // reconnect to the same PC stream (same stream_id) would skip
+        // configure() while the old pipeline is already stopped.
+        currentStreamID = ""
 
         let conn = NWConnection(host: NWEndpoint.Host(host), port: endpointPort, using: params)
         connection = conn
@@ -495,8 +501,13 @@ final class StreamManager: ObservableObject {
             forName: AVAudioSession.mediaServicesWereResetNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            self?.activateAudioSession()
-            self?.pipeline.resume()
+            guard let self = self else { return }
+            self.activateAudioSession()
+            self.statusText = "音频服务已重置，正在恢复…"
+            self.netQueue.async {
+                self.currentStreamID = ""
+                self.pipeline.stop()
+            }
         })
     }
 
