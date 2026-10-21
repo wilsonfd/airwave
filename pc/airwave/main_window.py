@@ -36,7 +36,7 @@ class MainWindow(QWidget):
         super().__init__()
         self.setWindowTitle("AirWave · 局域网音频推流")
         self.setWindowIcon(QIcon(resource_path("assets/app.ico")))
-        self.setMinimumSize(1020, 760)
+        self.setMinimumSize(1020, 640)
         self.resize(1160, 820)
 
         self.settings = QSettings("AirWave", "Server")
@@ -61,6 +61,7 @@ class MainWindow(QWidget):
 
         self._build_ui()
         self._restore_settings()
+        self._apply_screen_fit()
         self._setup_tray()
         self._stats = QTimer(self)
         self._stats.setInterval(100)
@@ -105,6 +106,13 @@ class MainWindow(QWidget):
         titles.addWidget(s)
         header.addLayout(titles)
         header.addStretch()
+
+        self.log_btn = QPushButton("日志")
+        self.log_btn.setObjectName("GhostBtn")
+        self.log_btn.setFixedHeight(26)
+        self.log_btn.setToolTip("显示 / 隐藏运行日志")
+        self.log_btn.clicked.connect(self._toggle_log)
+        header.addWidget(self.log_btn)
 
         self.pill = StatusPill()
         self.pill.set_state("未运行", theme.MUTED, False)
@@ -330,8 +338,27 @@ class MainWindow(QWidget):
         self.log_view.setFixedHeight(88)
         lc.addWidget(self.log_view)
         root.addWidget(log_card)
+        self.log_card = log_card
 
         self._set_controls_enabled(True)
+
+    def _apply_screen_fit(self) -> None:
+        """On 768p screens hide the log pane so the controls still fit."""
+        screen = QApplication.primaryScreen()
+        if screen is None:
+            return
+        height = screen.availableGeometry().height()
+        if height < 880:
+            self.log_card.hide()
+            self.log_btn.setText("显示日志")
+            self.resize(1160, max(640, min(700, height - 80)))
+        else:
+            self.log_btn.setText("隐藏日志")
+
+    def _toggle_log(self) -> None:
+        visible = not self.log_card.isVisible()
+        self.log_card.setVisible(visible)
+        self.log_btn.setText("隐藏日志" if visible else "显示日志")
 
     def _section(self, title: str, hint: str) -> QHBoxLayout:
         row = QHBoxLayout()

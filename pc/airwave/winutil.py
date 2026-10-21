@@ -50,7 +50,7 @@ def add_firewall_rule(port: int) -> bool:
         return False
     rule = f"AirWave_UDP_{port}"
     params = (f'advfirewall firewall add rule name={rule} dir=in '
-              f'action=allow protocol=UDP localport={port} profile=private,domain')
+              f'action=allow protocol=UDP localport={port} profile=any')
     try:
         rc = ctypes.windll.shell32.ShellExecuteW(
             None, "runas", "netsh.exe", params, None, 0)
