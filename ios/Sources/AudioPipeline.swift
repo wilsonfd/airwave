@@ -176,11 +176,25 @@ final class AudioPipeline {
 
     func setMode(_ newMode: Mode) {
         queue.async { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, self.mode != newMode else { return }
             self.mode = newMode
-            if newMode != .auto {
-                self.adaptiveMs = newMode.prebufferMs
-            }
+            self.adaptiveMs = newMode == .auto ? 120 : newMode.prebufferMs
+            guard self.running, !self.paused else { return }
+
+            // A mode change must discard the already-queued buffers, otherwise
+            // switching from “稳定” to “极低延迟” keeps 200+ ms of old audio in
+            // the player and the new target is only applied much later.  A
+            // short re-buffer is preferable to stale latency / false loss.
+            self.generation &+= 1
+            self.player?.stop()
+            self.scheduled = 0
+            self.jitter.reset()
+            self.didStart = false
+            self.recovering = false
+            self.needsFadeIn = true
+            self.lastTrimAt = Date.distantPast
+            self.lastUnderrunAt = Date.distantPast
+            self.lastAdaptAt = Date()
         }
     }
 
@@ -383,18 +397,19 @@ final class AudioPipeline {
         // player already holds `scheduled` buffers, so comparing only
         // jitter.count against prebuffer + lead allowed hundreds of ms of
         // drift to accumulate before anything was trimmed.
-        let targetBuffered = prebufferPackets + 6   // ~30–40 ms of slack
+        let targetBuffered = prebufferPackets + 10  // ~50 ms of clock-drift slack
         let bufferedPackets = jitter.count + scheduled
         if bufferedPackets > targetBuffered,
            Date().timeIntervalSince(lastTrimAt) > 1.0 {
-            let excess = min(8, bufferedPackets - targetBuffered)
+            let excess = min(4, bufferedPackets - targetBuffered)
             var dropped = 0
             while dropped < excess, jitter.count > 0 {
                 jitter.skipExpected()
                 dropped += 1
             }
             if dropped > 0 {
-                packetsLost += dropped
+                // Clock correction, not network loss.  Counting these as lost
+                // packets made the UI loss percentage look alarming.
                 needsFadeIn = true
                 lastTrimAt = Date()
             }
