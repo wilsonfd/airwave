@@ -331,6 +331,7 @@ struct SettingsView: View {
                 helpRow("wifi", "手机和电脑连接同一个 WiFi，优先 5 GHz。")
                 helpRow("lock.shield", "首次连接如弹出“本地网络”权限，请选择允许。")
                 helpRow("speaker.wave.2", "电脑端先点“开始推流”，手机再点连接。")
+                helpRow("music.note", "音质/带宽在电脑端“传输模式”选；这里选缓冲与延迟。")
                 helpRow("bolt.slash", "声音卡顿时把延迟模式切到“平衡”或“稳定”。")
                 helpRow("xmark.circle", "上滑彻底关闭 App 才会停止播放。")
 
