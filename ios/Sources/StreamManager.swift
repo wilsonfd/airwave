@@ -493,10 +493,10 @@ final class StreamManager: ObservableObject {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try? session.setPreferredSampleRate(48000)
-            // 5 ms is what the original low-latency client used.  The hardware
-            // may clamp it, but it removes the extra 10 ms render block.
-            try? session.setPreferredIOBufferDuration(0.005)
+            // 10 ms was the stable value. 5 ms made the render callback much
+            // more sensitive to scheduling jitter and was the main regression
+            // behind the sudden underruns / “packet loss”.
+            try? session.setPreferredIOBufferDuration(0.010)
             try session.setActive(true)
         } catch {
             DispatchQueue.main.async {
