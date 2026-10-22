@@ -81,7 +81,7 @@ struct ContentView: View {
                 Text("AirWave")
                     .font(AWFont.rounded(21, .bold))
                     .foregroundColor(.awText)
-                Text("局域网无损音频")
+                Text("局域网无损音频 · v2.2.0")
                     .font(AWFont.rounded(10.5, .medium))
                     .foregroundColor(.awMuted)
             }
