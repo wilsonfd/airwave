@@ -6,6 +6,7 @@ import SwiftUI
 enum LatencyMode: String, CaseIterable, Identifiable {
     case auto
     case low
+    case ultra
     case balanced
     case stable
 
@@ -15,6 +16,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return "自动"
         case .low: return "低延迟"
+        case .ultra: return "极低延迟"
         case .balanced: return "平衡"
         case .stable: return "稳定"
         }
@@ -24,6 +26,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return "自动调节"
         case .low: return "约 85 ms"
+        case .ultra: return "约 50–70 ms"
         case .balanced: return "约 220 ms"
         case .stable: return "约 380 ms"
         }
@@ -33,6 +36,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return "按网络抖动自动调整，推荐"
         case .low: return "约 75–100 ms，适合同一房间"
+        case .ultra: return "实验档：PC 选 3ms，5GHz 近距离；抖动大时会断音"
         case .balanced: return "约 190–240 ms，日常使用"
         case .stable: return "约 350–410 ms，隔墙/弱网更稳"
         }
@@ -42,6 +46,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return .auto
         case .low: return .low
+        case .ultra: return .ultra
         case .balanced: return .balanced
         case .stable: return .stable
         }
@@ -488,7 +493,10 @@ final class StreamManager: ObservableObject {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try? session.setPreferredIOBufferDuration(0.010)
+            try? session.setPreferredSampleRate(48000)
+            // 5 ms is what the original low-latency client used.  The hardware
+            // may clamp it, but it removes the extra 10 ms render block.
+            try? session.setPreferredIOBufferDuration(0.005)
             try session.setActive(true)
         } catch {
             DispatchQueue.main.async {
