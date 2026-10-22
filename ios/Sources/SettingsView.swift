@@ -349,6 +349,11 @@ struct SettingsView: View {
                     .padding(.top, 4)
                 }
                 .buttonStyle(PlainButtonStyle())
+
+                Text("AirWave 2.2.0 · build 7")
+                    .font(AWFont.rounded(9, .regular))
+                    .foregroundColor(.awDim)
+                    .padding(.top, 2)
             }
         }
     }
