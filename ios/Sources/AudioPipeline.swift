@@ -317,6 +317,8 @@ final class AudioPipeline {
         lastSeq = nil
         recovering = false
         lastTrimAt = Date.distantPast
+        lastUnderrunAt = Date.distantPast
+        lastLossAt = Date.distantPast
         adaptiveMs = mode == .auto ? 120 : mode.prebufferMs
         lastAdaptAt = Date()
     }
@@ -374,13 +376,25 @@ final class AudioPipeline {
     private func pumpLocked() {
         guard running, !paused, let player = player, let fmt = format, jitter.primed else { return }
 
-        // Bound latency drift (the PC and iPhone crystals are not identical).
-        let maxJitter = prebufferPackets + leadBuffers + 16
-        if jitter.count > maxJitter, Date().timeIntervalSince(lastTrimAt) > 2.0 {
-            jitter.skipExpected()
-            packetsLost += 1
-            needsFadeIn = true
-            lastTrimAt = Date()
+        // Bound the TOTAL queued audio, not just the jitter dictionary.  The
+        // player already holds `scheduled` buffers, so comparing only
+        // jitter.count against prebuffer + lead allowed hundreds of ms of
+        // drift to accumulate before anything was trimmed.
+        let targetBuffered = prebufferPackets + 6   // ~30–40 ms of slack
+        let bufferedPackets = jitter.count + scheduled
+        if bufferedPackets > targetBuffered,
+           Date().timeIntervalSince(lastTrimAt) > 1.0 {
+            let excess = min(8, bufferedPackets - targetBuffered)
+            var dropped = 0
+            while dropped < excess, jitter.count > 0 {
+                jitter.skipExpected()
+                dropped += 1
+            }
+            if dropped > 0 {
+                packetsLost += dropped
+                needsFadeIn = true
+                lastTrimAt = Date()
+            }
         }
 
         var guardCount = 0
@@ -512,14 +526,17 @@ final class AudioPipeline {
     private func emitStatsLocked() {
         let now = Date()
         if mode == .auto {
-            let recentLoss = now.timeIntervalSince(lastLossAt) < 3.0
-            let recentUnderrun = now.timeIntervalSince(lastUnderrunAt) < 3.0
-            if (recentLoss || recentUnderrun) && now.timeIntervalSince(lastAdaptAt) > 1.5 {
-                adaptiveMs = min(320, adaptiveMs + 20)
+            // Only an actual underrun proves the buffer is too small.  Packet
+            // loss alone is handled by concealment and must not make latency
+            // creep upward forever (that was the "starts fast, gets slower"
+            // behaviour).  Also decay sooner and cap lower.
+            let recentUnderrun = now.timeIntervalSince(lastUnderrunAt) < 4.0
+            if recentUnderrun && now.timeIntervalSince(lastAdaptAt) > 1.5 {
+                adaptiveMs = min(240, adaptiveMs + 20)
                 lastAdaptAt = now
-            } else if !recentLoss && !recentUnderrun &&
-                        now.timeIntervalSince(lastAdaptAt) > 20 && adaptiveMs > 60 {
-                adaptiveMs = max(60, adaptiveMs - 8)
+            } else if !recentUnderrun && now.timeIntervalSince(lastAdaptAt) > 8,
+                      adaptiveMs > 90 {
+                adaptiveMs = max(90, adaptiveMs - 6)
                 lastAdaptAt = now
             }
         }
