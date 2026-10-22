@@ -26,7 +26,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return "自动调节"
         case .low: return "约 85 ms"
-        case .ultra: return "约 50–70 ms"
+        case .ultra: return "约 45–65 ms"
         case .balanced: return "约 220 ms"
         case .stable: return "约 380 ms"
         }
@@ -36,7 +36,7 @@ enum LatencyMode: String, CaseIterable, Identifiable {
         switch self {
         case .auto: return "按网络抖动自动调整，推荐"
         case .low: return "约 75–100 ms，适合同一房间"
-        case .ultra: return "实验档：PC 选 3ms，5GHz 近距离；抖动大时会断音"
+        case .ultra: return "PC 选 7ms（143 包/秒）最稳；5GHz 近距离，抖动大时会断音"
         case .balanced: return "约 190–240 ms，日常使用"
         case .stable: return "约 350–410 ms，隔墙/弱网更稳"
         }
