@@ -23,6 +23,7 @@ final class AudioPipeline {
     enum Mode: String, CaseIterable {
         case auto
         case low
+        case ultra
         case balanced
         case stable
 
@@ -30,6 +31,7 @@ final class AudioPipeline {
             switch self {
             case .auto: return 120
             case .low: return 45
+            case .ultra: return 20
             case .balanced: return 120
             case .stable: return 240
             }
@@ -39,6 +41,7 @@ final class AudioPipeline {
             switch self {
             case .auto: return 14
             case .low: return 4
+            case .ultra: return 2
             case .balanced: return 14
             case .stable: return 18
             }
