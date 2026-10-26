@@ -43,3 +43,32 @@ jobs:
           name: AirWave-android
           path: AirWave-2.2.0-android.apk
           if-no-files-found: error
+
+  emulator:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: AirWave-android
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install -r AirWave-2.2.0-android.apk
+            adb shell am start -n com.wilsonfd.airwave/.MainActivity
+            sleep 6
+            adb exec-out screencap -p > android-ui.png
+            adb logcat -d -t 400 > android-log.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AirWave-android-ui
+          path: |
+            android-ui.png
+            android-log.txt
+          if-no-files-found: warn
