@@ -163,7 +163,10 @@ class MainActivity : Activity(), CoreListener {
         ))
         settingsButton = awText(this, "修改", 10f, AwColor.ACCENT, medium = true).apply {
             setPadding(dp(10f), dp(5f), dp(10f), dp(5f))
-            background = pillDrawable(Color.argb(28, 106, 169, 255), Color.argb(70, 106, 169, 255), 14f)
+            background = pillDrawable(
+                this@MainActivity,
+                Color.argb(28, 106, 169, 255), Color.argb(70, 106, 169, 255), 14f
+            )
             setOnClickListener { openSettings() }
         }
         cardHead.addView(settingsButton)
@@ -238,7 +241,10 @@ class MainActivity : Activity(), CoreListener {
 
         val gear = awText(this, "设置", 10.5f, AwColor.TEXT, medium = true).apply {
             setPadding(dp(13f), dp(8f), dp(13f), dp(8f))
-            background = pillDrawable(Color.argb(22, 255, 255, 255), AwColor.BORDER, 18f)
+            background = pillDrawable(
+                this@MainActivity,
+                Color.argb(22, 255, 255, 255), AwColor.BORDER, 18f
+            )
             setOnClickListener { openSettings() }
         }
         header.addView(gear)
