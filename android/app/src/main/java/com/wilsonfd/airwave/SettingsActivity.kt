@@ -87,6 +87,7 @@ class SettingsActivity : Activity() {
         val saveIp = awText(this, "保存此地址", 11f, AwColor.ACCENT, medium = true).apply {
             setPadding(dp(12f), dp(7f), dp(12f), dp(7f))
             background = pillDrawable(
+                this@SettingsActivity,
                 Color.argb(24, 106, 169, 255), Color.argb(80, 106, 169, 255), 16f
             )
             setOnClickListener { saveEndpointOnly() }
