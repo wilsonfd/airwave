@@ -354,7 +354,10 @@ private class JitterBuffer {
             started = true
             expected = seq
         }
-        if (seq < expected - 100) return false
+        // A late duplicate of an already-consumed packet must not be re-added
+        // behind `expected`; it would never be consumed and would look like
+        // permanent buffer growth.
+        if (seq < expected) return false
         if (packets.containsKey(seq)) return false
         packets[seq] = pcm
         return true
