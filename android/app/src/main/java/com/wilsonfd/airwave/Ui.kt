@@ -39,21 +39,21 @@ fun Context.dp(v: Float): Int = (v * resources.displayMetrics.density).toInt()
 
 fun View.dp(v: Float): Int = context.dp(v)
 
-fun glassDrawable(radiusDp: Float = 22f): GradientDrawable =
+fun glassDrawable(context: Context, radiusDp: Float = 22f): GradientDrawable =
     GradientDrawable(
         GradientDrawable.Orientation.TL_BR,
         intArrayOf(Color.rgb(14, 26, 46), Color.rgb(8, 18, 33))
     ).apply {
-        cornerRadius = dp(radiusDp).toFloat()
-        setStroke(dp(1f), AwColor.BORDER)
+        cornerRadius = context.dp(radiusDp).toFloat()
+        setStroke(context.dp(1f), AwColor.BORDER)
     }
 
-fun pillDrawable(fill: Int, stroke: Int, radiusDp: Float = 20f): GradientDrawable =
+fun pillDrawable(context: Context, fill: Int, stroke: Int, radiusDp: Float = 20f): GradientDrawable =
     GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
-        cornerRadius = dp(radiusDp).toFloat()
+        cornerRadius = context.dp(radiusDp).toFloat()
         setColor(fill)
-        setStroke(dp(1f), stroke)
+        setStroke(context.dp(1f), stroke)
     }
 
 fun typeface(medium: Boolean = false): Typeface =
@@ -112,7 +112,7 @@ class GlassCard(context: Context) : LinearLayout(context) {
     init {
         orientation = VERTICAL
         setPadding(dp(16f), dp(14f), dp(16f), dp(14f))
-        background = glassDrawable()
+        background = glassDrawable(context)
         elevation = dp(2f).toFloat()
     }
 }
@@ -273,10 +273,14 @@ class ModeBar(context: Context) : LinearLayout(context) {
         buttons.forEachIndexed { i, tv ->
             val mode = LatencyMode.entries[i]
             if (mode == selected) {
-                tv.background = pillDrawable(Color.argb(235, 234, 242, 255), AwColor.TEXT, 18f)
+                tv.background = pillDrawable(
+                    context, Color.argb(235, 234, 242, 255), AwColor.TEXT, 18f
+                )
                 tv.setTextColor(AwColor.BG)
             } else {
-                tv.background = pillDrawable(Color.argb(18, 255, 255, 255), AwColor.BORDER, 18f)
+                tv.background = pillDrawable(
+                    context, Color.argb(18, 255, 255, 255), AwColor.BORDER, 18f
+                )
                 tv.setTextColor(AwColor.MUTED)
             }
         }
@@ -290,7 +294,7 @@ class StatCard(context: Context, title: String, value: String, sub: String) : Li
     init {
         orientation = VERTICAL
         setPadding(dp(12f), dp(10f), dp(12f), dp(10f))
-        background = glassDrawable(16f)
+        background = glassDrawable(context, 16f)
         addView(awText(context, title, 9f, AwColor.DIM, medium = true))
         valueView = awText(context, value, 17f, AwColor.TEXT, medium = true, mono = true)
         valueView.setPadding(0, dp(2f), 0, 0)
